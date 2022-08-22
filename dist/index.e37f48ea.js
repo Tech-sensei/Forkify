@@ -2387,7 +2387,7 @@ class RecipeView {
         <div class="recipe__ingredients">
           <h2 class="heading--2">Recipe ingredients</h2>
           <ul class="recipe__ingredient-list">
-          ${this.#data.ingredients.map(this.#generaMarkupIngredients).join("")}
+          ${this.#data.ingredients.map(this.#generateMarkupIngredients).join("")}
           </ul>
         </div>
 
@@ -2411,9 +2411,8 @@ class RecipeView {
         </div>    
     `;
     }
-     #generaMarkupIngredients(ing) {
-        (ing)=>{
-            return `
+     #generateMarkupIngredients(ing) {
+        return `
             <li class="recipe__ingredient">
               <svg class="recipe__icon">
                 <use href="${0, _iconsSvgDefault.default}#icon-check"></use>
@@ -2426,7 +2425,6 @@ class RecipeView {
             </li>
 
             `;
-        };
     }
 }
 exports.default = new RecipeView();
