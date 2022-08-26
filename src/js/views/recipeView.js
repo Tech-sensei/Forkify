@@ -1,27 +1,33 @@
+// This is the view which contain the presentation logic
+
 // importing the the icons.svg files from the src folder. NB: WE CAN DO THIS BECAUSE OF PARCEL. AND WE PUT THE FILE PATH LIKE THAT BECAUSE WE ARE USING V2.
 import icons from 'url:../../img/icons.svg';
 
 // Importing functionality from an external library to convert decimal to fraction
 import { Fraction } from 'fractional';
-console.log(Fraction);
 
 // Creating the recipeView class
 class RecipeView {
   #parentElement = document.querySelector('.recipe');
   #data;
+  #errorMessage = 'We could not find that recipe (>▂<) Please try another one!';
 
-  render(data) {
-    this.#data = data;
-    const markup = this.#generateMarkup();
-    this.#clear();
-    this.#parentElement.insertAdjacentHTML('afterbegin', markup);
-  }
+  #successMessage = 'Success';
 
   #clear() {
     this.#parentElement.innerHTML = '';
   }
 
-  renderSpinner = function () {
+  // The render parameter is coming from the th controller
+  render(data) {
+    this.#data = data;
+    // console.log(this.#data);
+    const markup = this.#generateMarkup();
+    this.#clear();
+    this.#parentElement.insertAdjacentHTML('afterbegin', markup);
+  }
+
+  renderSpinner() {
     const markup = `
         <div class="spinner">
           <svg>
@@ -29,9 +35,45 @@ class RecipeView {
           </svg>
         </div>
   `;
-    this.#parentElement.innerHTML = '';
+    this.#clear();
     this.#parentElement.insertAdjacentHTML('afterbegin', markup);
-  };
+  }
+
+  renderError(message = this.#errorMessage) {
+    const markup = `
+          <div class="error">
+            <div>
+              <svg>
+                <use href="${icons}#icon-alert-triangle"></use>
+              </svg>
+            </div>
+            <p>${message}</p>
+          </div>
+    `;
+
+    this.#clear();
+    this.#parentElement.insertAdjacentHTML('afterbegin', markup);
+  }
+
+  renderMessage(message = this.#successMessage) {
+    const markup = `
+          <div class="error">
+            <div>
+              <svg>
+                <use href="${icons}#icon-smile"></use>
+              </svg>
+            </div>
+            <p>${message}</p>
+          </div>
+    `;
+
+    this.#clear();
+    this.#parentElement.insertAdjacentHTML('afterbegin', markup);
+  }
+
+  addHandlerRender(handler) {
+    ['hashchange', 'load'].forEach(ev => window.addEventListener(ev, handler));
+  }
 
   #generateMarkup() {
     return ` 
@@ -120,6 +162,7 @@ class RecipeView {
         </div>    
     `;
   }
+
   #generateMarkupIngredients(ing) {
     return `
             <li class="recipe__ingredient">

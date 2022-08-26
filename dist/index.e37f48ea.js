@@ -533,48 +533,62 @@ function hmrAcceptRun(bundle, id) {
 
 },{}],"aenu9":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+// This is the controller which serve as the bridge between  the model and view. It contain the application logic.
 // NOTE; THESE NPM DEPENDENCIES IS USE TO MAKE SURE THAT EVERY ES6 SYNTAXES ARE WORKING ON THE OLD BROWSERS
 // This is to polyfill every other thing else
-var _webImmediateJs = require("core-js/modules/web.immediate.js"); // window.addEventListener('hashchange', controlRecipe);
- // window.addEventListener('load', controlRecipe);
+var _webImmediateJs = require("core-js/modules/web.immediate.js");
+var _regeneratorRuntime = require("regenerator-runtime");
 // This is to polyfills async await syntaxes on the old browser
 var _runtime = require("regenerator-runtime/runtime");
 var _modelJs = require("./model.js");
 var _recipeViewJs = require("./views/recipeView.js");
 var _recipeViewJsDefault = parcelHelpers.interopDefault(_recipeViewJs);
-const recipeContainer = document.querySelector(".recipe");
-const timeout = function(s) {
-    return new Promise(function(_, reject) {
-        setTimeout(function() {
-            reject(new Error(`Request took too long! Timeout after ${s} second`));
-        }, s * 1000);
-    });
-};
+var _searchViewJs = require("./views/searchView.js");
+var _searchViewJsDefault = parcelHelpers.interopDefault(_searchViewJs);
 // https://forkify-api.herokuapp.com/v2
-///////////////////////////////////////
-// 1. API CALL
 const controlRecipe = async function() {
     try {
+        // declaring the id parameter in the loadRecipe of model.js as a variable
         const id = window.location.hash.slice(1);
         if (!id) return;
         // Rendering the Spinner Effect
         (0, _recipeViewJsDefault.default).renderSpinner();
         // Loading the recipe API
+        // NB; we are awaiting this method because its inside the an async function
         await _modelJs.loadRecipe(id);
         // 2.RENDERING THE RECIPE ON THE INTERFACE
+        // NB; the model.state.recipe is the data the we got from model.loadRecipe(id), it is passed as an argument to the render method in the recipeView, (data=== model.state.recipe)
         (0, _recipeViewJsDefault.default).render(_modelJs.state.recipe);
     } catch (err) {
-        alert(err);
+        console.log(err);
+        (0, _recipeViewJsDefault.default).renderError();
+    }
+};
+const controlSearchResult = async function() {
+    try {
+        // Get search query
+        const query = (0, _searchViewJsDefault.default).getQuery();
+        if (!query) return;
+        // Load search results
+        await _modelJs.loadSearchResults(query);
+        // render results
+        console.log(_modelJs.state.search.results);
+    } catch (err) {
         console.log(err);
     }
 };
-// controlRecipe();
-[
-    "hashchange",
-    "load"
-].forEach((ev)=>window.addEventListener(ev, controlRecipe));
+// Using IIFE
+// (function () {
+//   recipeView.addHandlerRender(controlRecipe);
+//   searchView.addHandlerSearch(controlSearchResult);
+// })();
+const init = function() {
+    (0, _recipeViewJsDefault.default).addHandlerRender(controlRecipe);
+    (0, _searchViewJsDefault.default).addHandlerSearch(controlSearchResult);
+};
+init();
 
-},{"core-js/modules/web.immediate.js":"49tUX","regenerator-runtime/runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./model.js":"Y4A21","./views/recipeView.js":"l60JC"}],"49tUX":[function(require,module,exports) {
+},{"core-js/modules/web.immediate.js":"49tUX","regenerator-runtime/runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./model.js":"Y4A21","./views/recipeView.js":"l60JC","regenerator-runtime":"dXNgZ","./views/searchView.js":"9OQAM"}],"49tUX":[function(require,module,exports) {
 // TODO: Remove this module from `core-js@4` since it's split to modules listed below
 require("../modules/web.clear-immediate");
 require("../modules/web.set-immediate");
@@ -2271,17 +2285,23 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "state", ()=>state);
 parcelHelpers.export(exports, "loadRecipe", ()=>loadRecipe);
+parcelHelpers.export(exports, "loadSearchResults", ()=>loadSearchResults);
+// This is the model which will contain all the application data which in thus contain the state and the business logic that manipulate the state.
 var _regeneratorRuntime = require("regenerator-runtime");
+var _config = require("./config");
+var _helpers = require("./helpers");
 const state = {
-    recipe: {}
+    recipe: {},
+    search: {
+        query: "",
+        results: []
+    }
 };
 const loadRecipe = async function(id) {
+    // we pass the id as an parameter so that it can be called in the controller.js
     try {
-        const response = await fetch(`https://forkify-api.herokuapp.com/api/v2/recipes/${id}`);
-        const data = await response.json();
-        console.log(response);
-        console.log(data);
-        if (!response.ok) throw new Error(`${data.message} ${response.status}`);
+        // /coming from the helpers.js
+        const data = await (0, _helpers.getJSON)(`${(0, _config.API_URL)}${id}`);
         // Destructuring the recipe data so we can create a new recipe object.
         const { recipe  } = data.data;
         state.recipe = {
@@ -2294,36 +2314,99 @@ const loadRecipe = async function(id) {
             cookingTime: recipe.cooking_time,
             ingredients: recipe.ingredients
         };
-        console.log(state.recipe);
     } catch (err) {
-        alert(err);
-        console.log(err);
+        console.log(`${err} 💥💥`);
+        throw err;
+    }
+};
+const loadSearchResults = async function(query) {
+    try {
+        state.search.query = query;
+        const data = await (0, _helpers.getJSON)(`${(0, _config.API_URL)}?search=${query}`);
+        console.log(data);
+        state.search.results = data.data.recipes.map((rec)=>{
+            return {
+                id: rec.id,
+                title: rec.title,
+                publisher: rec.publisher,
+                image: rec.image_url
+            };
+        });
+    // console.log(state.search.results);
+    } catch (err) {
+        console.log(`${err} 💥💥`);
+        throw err;
     }
 };
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","regenerator-runtime":"dXNgZ"}],"l60JC":[function(require,module,exports) {
+},{"regenerator-runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./config":"k5Hzs","./helpers":"hGI1E"}],"k5Hzs":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "API_URL", ()=>API_URL);
+parcelHelpers.export(exports, "TIMEOUT_SEC", ()=>TIMEOUT_SEC);
+const API_URL = `https://forkify-api.herokuapp.com/api/v2/recipes/`;
+const TIMEOUT_SEC = 15;
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"hGI1E":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "getJSON", ()=>getJSON);
+var _regeneratorRuntime = require("regenerator-runtime");
+var _config = require("./config");
+// This function is the function that will reject the promise gotten from the getJSON function if the internet connection is bad. In other to use this function we will a race between the fetch(url) and the timeout function promise and which ever occur first win the race. Using Promise.race()
+const timeout = function(s) {
+    return new Promise(function(_, reject) {
+        setTimeout(function() {
+            reject(new Error(`Request took too long! Timeout after ${s} second`));
+        }, s * 1000);
+    });
+};
+const getJSON = async function(url) {
+    try {
+        const response = await Promise.race([
+            fetch(url),
+            timeout(`${(0, _config.TIMEOUT_SEC)}`), 
+        ]);
+        const data = await response.json();
+        // console.log(response);
+        // console.log(data);
+        if (!response.ok) throw new Error(`${data.message} ${response.status}`);
+        //   the return data is going to be the resolved value that the getJSON return
+        return data;
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}; // 'https://forkify-api.herokuapp.com/api/v2/recipes/5ed6604591c37cdc054bcfb2'
+ // 'https://forkify-api.herokuapp.com/api/v2/recipes/5ed6604691c37cdc054bd0d4'
+
+},{"regenerator-runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./config":"k5Hzs"}],"l60JC":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+// This is the view which contain the presentation logic
 // importing the the icons.svg files from the src folder. NB: WE CAN DO THIS BECAUSE OF PARCEL. AND WE PUT THE FILE PATH LIKE THAT BECAUSE WE ARE USING V2.
 var _iconsSvg = require("url:../../img/icons.svg");
 var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
 // Importing functionality from an external library to convert decimal to fraction
 var _fractional = require("fractional");
-console.log((0, _fractional.Fraction));
 // Creating the recipeView class
 class RecipeView {
     #parentElement = document.querySelector(".recipe");
     #data;
+    #errorMessage = "We could not find that recipe (>▂<) Please try another one!";
+    #successMessage = "Success";
+     #clear() {
+        this.#parentElement.innerHTML = "";
+    }
+    // The render parameter is coming from the th controller
     render(data) {
         this.#data = data;
+        // console.log(this.#data);
         const markup = this.#generateMarkup();
         this.#clear();
         this.#parentElement.insertAdjacentHTML("afterbegin", markup);
     }
-     #clear() {
-        this.#parentElement.innerHTML = "";
-    }
-    renderSpinner = function() {
+    renderSpinner() {
         const markup = `
         <div class="spinner">
           <svg>
@@ -2331,9 +2414,43 @@ class RecipeView {
           </svg>
         </div>
   `;
-        this.#parentElement.innerHTML = "";
+        this.#clear();
         this.#parentElement.insertAdjacentHTML("afterbegin", markup);
-    };
+    }
+    renderError(message = this.#errorMessage) {
+        const markup = `
+          <div class="error">
+            <div>
+              <svg>
+                <use href="${(0, _iconsSvgDefault.default)}#icon-alert-triangle"></use>
+              </svg>
+            </div>
+            <p>${message}</p>
+          </div>
+    `;
+        this.#clear();
+        this.#parentElement.insertAdjacentHTML("afterbegin", markup);
+    }
+    renderMessage(message = this.#successMessage) {
+        const markup = `
+          <div class="error">
+            <div>
+              <svg>
+                <use href="${(0, _iconsSvgDefault.default)}#icon-smile"></use>
+              </svg>
+            </div>
+            <p>${message}</p>
+          </div>
+    `;
+        this.#clear();
+        this.#parentElement.insertAdjacentHTML("afterbegin", markup);
+    }
+    addHandlerRender(handler) {
+        [
+            "hashchange",
+            "load"
+        ].forEach((ev)=>window.addEventListener(ev, handler));
+    }
      #generateMarkup() {
         return ` 
         <figure class="recipe__fig">
@@ -2429,7 +2546,7 @@ class RecipeView {
 }
 exports.default = new RecipeView();
 
-},{"url:../../img/icons.svg":"loVOp","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","fractional":"3SU56"}],"loVOp":[function(require,module,exports) {
+},{"url:../../img/icons.svg":"loVOp","fractional":"3SU56","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"loVOp":[function(require,module,exports) {
 module.exports = require("./helpers/bundle-url").getBundleURL("hWUTQ") + "icons.dfd7a6db.svg" + "?" + Date.now();
 
 },{"./helpers/bundle-url":"lgJ39"}],"lgJ39":[function(require,module,exports) {
@@ -2719,6 +2836,28 @@ Fraction.primeFactors = function(n) {
 };
 module.exports.Fraction = Fraction;
 
-},{}]},["fA0o9","aenu9"], "aenu9", "parcelRequire3a11")
+},{}],"9OQAM":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+class SearchView {
+    #parentEl = document.querySelector(".search");
+     #clearInput() {
+        this.#parentEl.querySelector(".search__field").value = "";
+    }
+    getQuery() {
+        const query = this.#parentEl.querySelector(".search__field").value;
+        this.#clearInput();
+        return query;
+    }
+    addHandlerSearch(handler) {
+        this.#parentEl.addEventListener("submit", function(e) {
+            e.preventDefault();
+            handler();
+        });
+    }
+}
+exports.default = new SearchView();
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["fA0o9","aenu9"], "aenu9", "parcelRequire3a11")
 
 //# sourceMappingURL=index.e37f48ea.js.map

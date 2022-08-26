@@ -1,21 +1,24 @@
-import { async } from 'regenerator-runtime';
+// This is the model which will contain all the application data which in thus contain the state and the business logic that manipulate the state.
 
+import { async } from 'regenerator-runtime';
+import { API_URL } from './config';
+import { getJSON } from './helpers';
+
+// we are creating a big object which will contain; recipe{}, search{} and the bookmark{}. Also it will contain a method called loadRecipe() which will get recipe from the server
 export const state = {
   recipe: {},
+  search: {
+    query: '',
+    results: [],
+  },
 };
 
 export const loadRecipe = async function (id) {
+  // we pass the id as an parameter so that it can be called in the controller.js
   try {
-    const response = await fetch(
-      `https://forkify-api.herokuapp.com/api/v2/recipes/${id}`
-      // 'https://forkify-api.herokuapp.com/api/v2/recipes/5ed6604591c37cdc054bcfb2'
-      // 'https://forkify-api.herokuapp.com/api/v2/recipes/5ed6604691c37cdc054bd0d4'
-    );
-    const data = await response.json();
-    console.log(response);
-    console.log(data);
+    // /coming from the helpers.js
+    const data = await getJSON(`${API_URL}${id}`);
 
-    if (!response.ok) throw new Error(`${data.message} ${response.status}`);
     // Destructuring the recipe data so we can create a new recipe object.
     const { recipe } = data.data;
 
@@ -29,9 +32,32 @@ export const loadRecipe = async function (id) {
       cookingTime: recipe.cooking_time,
       ingredients: recipe.ingredients,
     };
-    console.log(state.recipe);
   } catch (err) {
-      alert(err);
-      console.log(err);
+    console.log(`${err} 💥💥`);
+    throw err;
   }
 };
+
+// Search Functionality
+
+export const loadSearchResults = async function (query) {
+  try {
+    state.search.query = query
+    const data = await getJSON(`${API_URL}?search=${query}`);
+    console.log(data);
+
+    state.search.results = data.data.recipes.map(rec => {
+      return {
+        id: rec.id,
+        title: rec.title,
+        publisher: rec.publisher,
+        image: rec.image_url,
+      };
+    });
+    // console.log(state.search.results);
+  } catch (err) {
+    console.log(`${err} 💥💥`);
+    throw err;
+  }
+};
+
