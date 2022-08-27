@@ -5,6 +5,9 @@ export default class View {
 
   // The render parameter is coming from the th controller
   render(data) {
+    // If there is no data fro the query search or if there is data but the data is an array and it is empty return immediately and render error message
+    if (!data || (Array.isArray(data) && data.length === 0))
+      return this.renderError();
     this._data = data;
     // console.log(this._data);
     const markup = this._generateMarkup();

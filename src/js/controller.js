@@ -14,6 +14,9 @@ import resultsView from './views/resultsView.js';
 
 // https://forkify-api.herokuapp.com/v2
 
+if (module.hot) {
+  module.hot.accept();
+}
 const controlRecipe = async function () {
   try {
     // declaring the id parameter in the loadRecipe of model.js as a variable
@@ -47,7 +50,6 @@ const controlSearchResult = async function () {
     await model.loadSearchResults(query);
 
     // render results
-    console.log(model.state.search.results);
     resultsView.render(model.state.search.results);
   } catch (err) {
     console.log(err);
