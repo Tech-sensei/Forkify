@@ -2380,13 +2380,16 @@ const timeout = function(s) {
 };
 const getJSON = async function(url) {
     try {
+        // response coming from the API call (fetch(url))which is been raced with the timeout function.
         const response = await Promise.race([
             fetch(url),
             timeout(`${(0, _config.TIMEOUT_SEC)}`), 
         ]);
+        // converting the response object to json which  in thus return another, which we then have to await.
         const data = await response.json();
         // console.log(response);
         // console.log(data);
+        // we are throwing a new error if the fetch request fails, tho it will return response and that's where we get the data.message and response.status.
         if (!response.ok) throw new Error(`${data.message} ${response.status}`);
         //   the return data is going to be the resolved value that the getJSON return
         return data;
@@ -2394,8 +2397,7 @@ const getJSON = async function(url) {
         console.log(err);
         throw err;
     }
-}; // 'https://forkify-api.herokuapp.com/api/v2/recipes/5ed6604591c37cdc054bcfb2'
- // 'https://forkify-api.herokuapp.com/api/v2/recipes/5ed6604691c37cdc054bd0d4'
+};
 
 },{"regenerator-runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./config":"k5Hzs"}],"l60JC":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
