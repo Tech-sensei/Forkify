@@ -1,7 +1,7 @@
 // This is the model which will contain all the application data which in thus contain the state and the business logic that manipulate the state.
 
 import { async } from 'regenerator-runtime';
-import { API_URL } from './config';
+import { API_URL, RES_PER_PAGE } from './config';
 import { getJSON } from './helpers';
 
 // we are creating a big object which will contain; recipe{}, search{} and the bookmark{}. Also it will contain a method called loadRecipe() which will get recipe from the server
@@ -10,6 +10,8 @@ export const state = {
   search: {
     query: '',
     results: [],
+    resultsPerPage: RES_PER_PAGE,
+    page: 1,
   },
 };
 
@@ -42,7 +44,7 @@ export const loadRecipe = async function (id) {
 
 export const loadSearchResults = async function (query) {
   try {
-    state.search.query = query
+    state.search.query = query;
     const data = await getJSON(`${API_URL}?search=${query}`);
     console.log(data);
 
@@ -61,3 +63,11 @@ export const loadSearchResults = async function (query) {
   }
 };
 
+export const getSearchResultsPage = function (page = state.search.page) {
+  state.search.page = page;
+
+  const start = (page - 1) * state.search.resultsPerPage; //0
+  const end = page * state.search.resultsPerPage; // 9
+
+  return state.search.results.slice(start, end);
+};
