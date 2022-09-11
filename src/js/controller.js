@@ -27,6 +27,9 @@ const controlRecipe = async function () {
     // Rendering the Spinner Effect
     recipeView.renderSpinner();
 
+    // Update results view to mark selected search result
+    resultsView.update(model.getSearchResultsPage());
+
     // Loading the recipe API
     // NB; we are awaiting this method because its inside the an async function
     await model.loadRecipe(id);
@@ -76,7 +79,8 @@ const controlServings = function (newServings) {
   model.updateServing(newServings);
 
   // Update the recipe view
-  recipeView.render(model.state.recipe);
+  // recipeView.render(model.state.recipe);
+  recipeView.update(model.state.recipe);
 };
 
 const init = function () {
