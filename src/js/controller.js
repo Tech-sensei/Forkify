@@ -19,6 +19,7 @@ if (module.hot) {
   module.hot.accept();
 }
 
+// Control for loading the recipe
 const controlRecipe = async function () {
   try {
     // declaring the id parameter in the loadRecipe of model.js as a variable
@@ -43,6 +44,7 @@ const controlRecipe = async function () {
   }
 };
 
+// Control for loading the the search result recipe
 const controlSearchResult = async function () {
   try {
     resultsView.renderSpinner();
@@ -65,6 +67,7 @@ const controlSearchResult = async function () {
   }
 };
 
+//Control for pagination
 const controlPagination = function (goToPage) {
   // 3)render new results
   // resultsView.render(model.state.search.results);
@@ -74,6 +77,7 @@ const controlPagination = function (goToPage) {
   paginationView.render(model.state.search);
 };
 
+// Control for updating the serving
 const controlServings = function (newServings) {
   // Update the recipe servings (in state)
   model.updateServing(newServings);
@@ -83,9 +87,19 @@ const controlServings = function (newServings) {
   recipeView.update(model.state.recipe);
 };
 
+// Control for bookmarking
+const controlAddBookmark = function () {
+  if (!model.state.recipe.bookmarked) model.addBookMark(model.state.recipe);
+  else model.deleteBookMark(model.state.recipe.id);
+
+  console.log(model.state.recipe);
+  recipeView.update(model.state.recipe);
+};
+
 const init = function () {
   recipeView.addHandlerRender(controlRecipe);
   recipeView.addHandlerUpdateServings(controlServings);
+  recipeView.addHandlerBookmark(controlAddBookmark);
   searchView.addHandlerSearch(controlSearchResult);
   paginationView._addHandlerClick(controlPagination);
 };
